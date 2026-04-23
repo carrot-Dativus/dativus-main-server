@@ -1,8 +1,10 @@
 spring:
+  config:
+    import: optional:file:.env
   datasource:
     url: jdbc:postgresql://localhost:5432/dativus_db
     username: postgres
-    password: your_password
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
