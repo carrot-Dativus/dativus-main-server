@@ -2,6 +2,7 @@ package com.dativus.server.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "uploaded_documents")
 @Getter
+@Setter
 @NoArgsConstructor
 public class UploadedDocument {
     @Id

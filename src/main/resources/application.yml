@@ -1,4 +1,10 @@
 spring:
+  # 💡 새롭게 추가된 파일 업로드 용량 해제 설정 (50MB)
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
   config:
     import: optional:file:.env
   datasource:
