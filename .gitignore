@@ -37,3 +37,8 @@ out/
 # 빌드 결과물 (용량만 차지하고 서버에서 직접 만드는 게 정석)
 build/
 bin/
+
+build/
+.gradle/
+.idea/
+capstone_secret.txt.txt
