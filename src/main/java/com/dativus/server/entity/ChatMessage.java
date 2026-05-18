@@ -40,9 +40,18 @@ public class ChatMessage {
     @Column(name = "router_level")
     private String routerLevel;
 
+    @Column(name = "is_private", nullable = false, columnDefinition = "boolean default false")
+    private boolean isPrivate = false;
+
     @JdbcTypeCode(SqlTypes.JSON) // PostgreSQL의 JSONB 타입을 매핑 [cite: 190]
     @Column(name = "source_documents", columnDefinition = "jsonb")
     private String sourceDocuments;
+
+    @Column(name = "latency")
+    private Double latency = 0.0;
+
+    @Column(name = "tokens")
+    private Integer tokens = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

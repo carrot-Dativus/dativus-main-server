@@ -33,10 +33,11 @@ public class Workspace {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    // 💡 v4.0 추가: 이 워크스페이스에 소속된 유저들 (1:N 관계)
-    // CascadeType.ALL은 워크스페이스가 삭제될 때 연관된 설정도 관리하기 위함입니다.
-    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL)
-    private List<User> members = new ArrayList<>();
+    // 💡 v4.0 수정: 직접 User를 가지지 않고, 입장권(WorkspaceMember) 명부를 가집니다!
+    @OneToMany(mappedBy = "workspace", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkspaceMember> members = new ArrayList<>();
+
+
 
     // 💡 서비스 코드에서 사용할 생성자 업데이트
     public Workspace(String name, String inviteCode) {

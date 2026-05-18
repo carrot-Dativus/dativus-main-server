@@ -13,13 +13,15 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  jpa:
+jpa:
+  show-sql: true # 💡 SQL 로그 보기 (여기에 위치해야 합니다!)
+  hibernate:
+    ddl-auto: update # 💡 [핵심] DB 컬럼 자동 업데이트 지시!
+  properties:
     hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
+      format_sql: true
+
+
 
 jwt:
   # Spring Boot가 토큰을 '만들 때' 사용하는 키

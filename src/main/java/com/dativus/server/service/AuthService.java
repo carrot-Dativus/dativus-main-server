@@ -20,26 +20,35 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("가입되지 않은 이메일입니다."));
 
-        // 2. 비밀번호 확인 (현재는 평문 비교, 추후 암호화 적용)
+        // 2. 비밀번호 확인
         if (!user.getPasswordHash().equals(request.getPassword())) {
             throw new RuntimeException("비밀번호가 틀렸습니다.");
         }
 
-        // 💡 [v4.0 핵심 방어 로직] 워크스페이스가 null일 경우를 안전하게 처리
+        // 💡 [v4.0 개편 로직] 이제 유저는 여러 방에 속할 수 있으므로, 입장권(WorkspaceMember) 목록에서 정보를 꺼냅니다.
         String workspaceId = null;
-        if (user.getWorkspace() != null) {
-            workspaceId = user.getWorkspace().getId().toString();
+
+        // 유저가 가진 입장권 목록이 비어있지 않은지 확인
+        if (user.getWorkspaceMembers() != null && !user.getWorkspaceMembers().isEmpty()) {
+
+            // [기존 코드 삭제] workspaceId = user.getWorkspaceMembers().get(0).getWorkspace().getId().toString();
+
+            // 🎯 [신규 코드] 가입일(joinedAt) 기준으로 정렬해서 무조건 최초의 방(샌드박스)으로 입장시킵니다!
+            workspaceId = user.getWorkspaceMembers().stream()
+                    .min(java.util.Comparator.comparing(com.dativus.server.entity.WorkspaceMember::getJoinedAt))
+                    .map(member -> member.getWorkspace().getId().toString())
+                    .orElse(null);
         }
 
-        // 3. JWT 토큰 생성 (팀이 없으면 workspaceId 자리에 null이 들어감)
+        // 3. JWT 토큰 생성
         String token = jwtUtil.generateToken(user.getId().toString(), workspaceId);
 
-        // 4. 명세서에 맞게 응답 객체 만들어서 돌려주기
+        // 4. 응답 반환
         return new LoginResponse(
                 token,
                 "Bearer",
                 user.getId().toString(),
-                workspaceId // 💡 여기도 에러 나던 것을 안전한 변수로 교체!
+                workspaceId
         );
     }
 }

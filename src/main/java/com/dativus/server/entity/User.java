@@ -3,24 +3,24 @@ package com.dativus.server.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor; // 👈 1. 롬복 추가
+import lombok.AllArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "users")
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor // 👈 2. 어노테이션 추가
+@AllArgsConstructor
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workspace_id")
-    private Workspace workspace;
+    // ❌ 과거 잔재(Workspace 직접 연결) 삭제 완료!
 
     @Column(nullable = false)
     private String username;
@@ -31,7 +31,6 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    // v4.0 페르소나 컬럼 추가 (null 허용)
     @Column(name = "persona_decision_style")
     private String personaDecisionStyle;
 
@@ -41,23 +40,20 @@ public class User {
     @Column(name = "persona_tone")
     private String personaTone;
 
+    // ⭕ 새로운 중간 다리 (입장권 주머니) 장착 완료!
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WorkspaceMember> workspaceMembers = new ArrayList<>();
+
     public void updatePersona(String decisionStyle, String expertise, String tone) {
         this.personaDecisionStyle = decisionStyle;
         this.personaExpertise = expertise;
         this.personaTone = tone;
     }
 
-    // 👈 3. 서비스 코드 에러를 없애줄 진짜 핵심 생성자! (ID는 제외)
-    public User(String username, String email, String passwordHash, Workspace workspace) {
+    // 💡 생성자에서도 workspace 제거! (유저는 가입 시점에 방이 없을 수도 있으니까요)
+    public User(String username, String email, String passwordHash) {
         this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
-        this.workspace = workspace;
-
-    }
-
-    // 💡 팀 합류를 위한 편의 메서드
-    public void setWorkspace(Workspace workspace) {
-        this.workspace = workspace;
     }
 }
