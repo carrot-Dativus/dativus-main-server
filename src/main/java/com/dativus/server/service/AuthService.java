@@ -2,53 +2,101 @@ package com.dativus.server.service;
 
 import com.dativus.server.dto.LoginRequest;
 import com.dativus.server.dto.LoginResponse;
+import com.dativus.server.entity.RefreshToken;
 import com.dativus.server.entity.User;
+import com.dativus.server.repository.RefreshTokenRepository;
 import com.dativus.server.repository.UserRepository;
 import com.dativus.server.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final JwtUtil jwtUtil;
+    private final BCryptPasswordEncoder passwordEncoder;
 
+    private static final long REFRESH_TOKEN_DAYS = 7;
+
+    @Transactional
     public LoginResponse login(LoginRequest request) {
-        // 1. 이메일로 유저 찾기
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("가입되지 않은 이메일입니다."));
 
-        // 2. 비밀번호 확인
-        if (!user.getPasswordHash().equals(request.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("비밀번호가 틀렸습니다.");
         }
 
-        // 💡 [v4.0 개편 로직] 이제 유저는 여러 방에 속할 수 있으므로, 입장권(WorkspaceMember) 목록에서 정보를 꺼냅니다.
         String workspaceId = null;
-
-        // 유저가 가진 입장권 목록이 비어있지 않은지 확인
         if (user.getWorkspaceMembers() != null && !user.getWorkspaceMembers().isEmpty()) {
-
-            // [기존 코드 삭제] workspaceId = user.getWorkspaceMembers().get(0).getWorkspace().getId().toString();
-
-            // 🎯 [신규 코드] 가입일(joinedAt) 기준으로 정렬해서 무조건 최초의 방(샌드박스)으로 입장시킵니다!
             workspaceId = user.getWorkspaceMembers().stream()
                     .min(java.util.Comparator.comparing(com.dativus.server.entity.WorkspaceMember::getJoinedAt))
                     .map(member -> member.getWorkspace().getId().toString())
                     .orElse(null);
         }
 
-        // 3. JWT 토큰 생성
-        String token = jwtUtil.generateToken(user.getId().toString(), workspaceId);
+        String accessToken = jwtUtil.generateToken(user.getId().toString(), workspaceId);
+        String refreshToken = createRefreshToken(user.getId());
 
-        // 4. 응답 반환
-        return new LoginResponse(
-                token,
-                "Bearer",
-                user.getId().toString(),
-                workspaceId
-        );
+        return new LoginResponse(accessToken, refreshToken, "Bearer", user.getId().toString(), workspaceId);
+    }
+
+    @Transactional
+    public LoginResponse refresh(String refreshTokenValue) {
+        RefreshToken stored = refreshTokenRepository.findByToken(refreshTokenValue)
+                .orElseThrow(() -> new RuntimeException("유효하지 않은 Refresh Token입니다."));
+
+        if (stored.isExpired()) {
+            refreshTokenRepository.delete(stored);
+            throw new RuntimeException("Refresh Token이 만료되었습니다. 다시 로그인해 주세요.");
+        }
+
+        User user = userRepository.findById(stored.getUserId())
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        String workspaceId = null;
+        if (user.getWorkspaceMembers() != null && !user.getWorkspaceMembers().isEmpty()) {
+            workspaceId = user.getWorkspaceMembers().stream()
+                    .min(java.util.Comparator.comparing(com.dativus.server.entity.WorkspaceMember::getJoinedAt))
+                    .map(member -> member.getWorkspace().getId().toString())
+                    .orElse(null);
+        }
+
+        // 기존 refresh token 교체 (rotation)
+        refreshTokenRepository.delete(stored);
+        String newRefreshToken = createRefreshToken(user.getId());
+        String newAccessToken = jwtUtil.generateToken(user.getId().toString(), workspaceId);
+
+        return new LoginResponse(newAccessToken, newRefreshToken, "Bearer", user.getId().toString(), workspaceId);
+    }
+
+    @Transactional
+    public void logout(String refreshTokenValue) {
+        refreshTokenRepository.findByToken(refreshTokenValue)
+                .ifPresent(refreshTokenRepository::delete);
+    }
+
+    private String createRefreshToken(UUID userId) {
+        // 기존 refresh token 삭제 (디바이스당 1개 유지)
+        refreshTokenRepository.deleteByUserId(userId);
+
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token(UUID.randomUUID().toString())
+                .userId(userId)
+                .createdAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_DAYS))
+                .build();
+
+        return refreshTokenRepository.save(refreshToken).getToken();
     }
 }

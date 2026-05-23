@@ -7,17 +7,21 @@ import com.dativus.server.entity.WorkspaceMember; // 💡 신규 입장권 엔�
 import com.dativus.server.repository.UserRepository;
 import com.dativus.server.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.UUID;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Transactional
     public String register(UserRegisterRequest request) {
@@ -25,11 +29,13 @@ public class UserService {
             throw new RuntimeException("이미 존재하는 이메일입니다.");
         }
 
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+
         // 💡 [변경 1] 유저를 먼저 단독으로 생성합니다. (방 연결 없음!)
         User user = new User(
                 request.getUsername(),
                 request.getEmail(),
-                request.getPassword()
+                encodedPassword
         );
 
         if (request.getPersona() != null) {
