@@ -41,4 +41,25 @@ public class AgentService {
     public List<Agent> getAgentsByOwner(String ownerIdStr) {
         return agentRepository.findByOwnerId(UUID.fromString(ownerIdStr));
     }
+
+    // 💡 3. 자아 수정
+    @Transactional
+    public Agent updateAgent(String agentIdStr, String name, String description, String agentType) {
+        Agent agent = agentRepository.findById(UUID.fromString(agentIdStr))
+                .orElseThrow(() -> new RuntimeException("에이전트를 찾을 수 없습니다."));
+        agent.setName(name);
+        agent.setDescription(description);
+        agent.setAgentType(agentType);
+        return agentRepository.save(agent);
+    }
+
+    // 💡 4. 자아 삭제
+    @Transactional
+    public void deleteAgent(String agentIdStr) {
+        UUID agentId = UUID.fromString(agentIdStr);
+        if (!agentRepository.existsById(agentId)) {
+            throw new RuntimeException("에이전트를 찾을 수 없습니다.");
+        }
+        agentRepository.deleteById(agentId);
+    }
 }
