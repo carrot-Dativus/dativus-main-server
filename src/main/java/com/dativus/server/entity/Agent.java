@@ -40,6 +40,9 @@ public class Agent {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "threshold", nullable = false, columnDefinition = "DOUBLE PRECISION DEFAULT 0.38")
+    private Double threshold = 0.38;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

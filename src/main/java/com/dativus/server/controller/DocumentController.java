@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.dativus.server.dto.WebhookRequest;
 
-@CrossOrigin(originPatterns = "*", allowedHeaders = "*", allowCredentials = "true")@RestController
+@RestController
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
 public class DocumentController {
@@ -21,10 +21,6 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("workspaceId") String workspaceId
     ) {
-        //포스트맨에서 토큰이 제대로 넘어왔는지 콘솔에 출력
-        System.out.println("=========================================");
-        System.out.println("🚨 전달받은 토큰: " + token);
-        System.out.println("=========================================");
         try {
             // 💡 잡은 출입증(token)을 우체부(Service)에게 같이 쥐여 보냅니다.
             String fastApiResponse = documentService.sendToFastAPI(file, workspaceId, token);
@@ -48,10 +44,7 @@ public class DocumentController {
     @GetMapping("/workspace/{workspaceId}")
     public ResponseEntity<?> getWorkspaceDocuments (@PathVariable String workspaceId) {
         try {
-            System.out.println("\n📊 [지식망 보드] 조회 요청 수신 - 방 번호: " + workspaceId);
-
             java.util.List<com.dativus.server.entity.UploadedDocument> docs = documentService.getDocumentsByWorkspace(workspaceId);
-            System.out.println("👉 DB에서 찾은 문서 개수: " + docs.size() + "개");
 
             // 깐깐한 Map.of 대신 어떤 예외 상황에도 안 터지는 안전한 HashMap 사용!
             java.util.List<java.util.Map<String, Object>> result = new java.util.ArrayList<>();
@@ -64,7 +57,6 @@ public class DocumentController {
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            System.out.println("🚨 지식망 보드 에러 발생: " + e.getMessage());
             return ResponseEntity.badRequest().body("문서 목록을 불러오는 데 실패했습니다.");
         }
     }

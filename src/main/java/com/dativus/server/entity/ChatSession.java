@@ -39,6 +39,16 @@ public class ChatSession {
     )
     private List<Agent> participatingAgents = new ArrayList<>();
 
+    @Column(name = "session_type", nullable = false, columnDefinition = "VARCHAR(50) DEFAULT 'TEAM_CHANNEL'")
+    private String sessionType = "TEAM_CHANNEL";
+
+    // AI: AI 채팅방 (기존 동작), CHAT: 팀원 채팅 전용 (AI 없음)
+    @Column(name = "channel_mode", nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'AI'")
+    private String channelMode = "AI";
+
+    @Column(name = "user_id")
+    private UUID userId;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

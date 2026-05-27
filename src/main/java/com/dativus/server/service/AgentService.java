@@ -19,19 +19,18 @@ public class AgentService {
 
     // 💡 1. 새로운 자아를 빚어내는 로직
     @Transactional
-    public Agent createAgent(String ownerIdStr, String name, String description, String agentType) {
-        // 주인이 진짜 존재하는지 확인
+    public Agent createAgent(String ownerIdStr, String name, String description, String agentType, Double threshold) {
         User owner = userRepository.findById(UUID.fromString(ownerIdStr))
                 .orElseThrow(() -> new RuntimeException("지휘관(유저)을 찾을 수 없습니다."));
 
-        // 새로운 에이전트(자아) 생성 및 속성 부여
         Agent agent = new Agent();
         agent.setOwner(owner);
         agent.setName(name);
-        agent.setDescription(description); // 성격, 역할, 프롬프트 등
-        agent.setAgentType(agentType);     // 예: "LOCAL" (파이썬 Llama3 기반)
-        agent.setModelName("llama3");      // 기본 장착 뇌 모델
+        agent.setDescription(description);
+        agent.setAgentType(agentType);
+        agent.setModelName("llama3");
         agent.setIsActive(true);
+        agent.setThreshold(threshold != null ? threshold : 0.38);
 
         return agentRepository.save(agent);
     }
@@ -44,12 +43,13 @@ public class AgentService {
 
     // 💡 3. 자아 수정
     @Transactional
-    public Agent updateAgent(String agentIdStr, String name, String description, String agentType) {
+    public Agent updateAgent(String agentIdStr, String name, String description, String agentType, Double threshold) {
         Agent agent = agentRepository.findById(UUID.fromString(agentIdStr))
                 .orElseThrow(() -> new RuntimeException("에이전트를 찾을 수 없습니다."));
         agent.setName(name);
         agent.setDescription(description);
         agent.setAgentType(agentType);
+        if (threshold != null) agent.setThreshold(threshold);
         return agentRepository.save(agent);
     }
 

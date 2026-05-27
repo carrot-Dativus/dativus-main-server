@@ -6,14 +6,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/feedback")
-@CrossOrigin(originPatterns = "*") // 💡 해결: origins 대신 originPatterns를 사용!
 public class FeedbackController {
 
     @Autowired
@@ -52,16 +54,30 @@ public class FeedbackController {
 
     @GetMapping("/stats/daily/{userId}")
     public ResponseEntity<?> getDailyStats(@PathVariable String userId) {
-        // 💡 실제로는 DB에서 날짜별로 Group By 쿼리를 날려야 하지만,
-        // 시연을 위해 최근 7일간의 데이터를 가공해서 보내주는 로직을 작성합니다.
+        LocalDateTime since = LocalDate.now().minusDays(6).atStartOfDay();
+        List<Object[]> rows = feedbackLogRepository.findDailyScoreByUserId(userId, since);
 
-        // 예시 데이터 구조 (JSON)
-        // [ {"date": "05-10", "positive": 5, "negative": 1}, ... ]
+        // DB 결과를 날짜 문자열 → 점수 맵으로 변환
+        Map<String, Integer> scoreByDate = new HashMap<>();
+        for (Object[] row : rows) {
+            String dateStr = row[0].toString(); // "2026-05-21"
+            int score = ((Number) row[1]).intValue();
+            scoreByDate.put(dateStr, score);
+        }
 
-        List<Map<String, Object>> dailyData = new ArrayList<>();
-        // DB에서 데이터를 가져와서 날짜별로 맵핑하는 로직이 들어갈 자리입니다.
-        // 일단은 리액트에서 그래프가 도는 것을 확인하기 위해 더미 데이터를 섞어 보낼 수 있습니다.
+        // 최근 7일 그리드 생성 (데이터 없는 날은 null)
+        LocalDate today = LocalDate.now();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            String dateStr = date.toString();
+            String label = i == 0 ? "오늘" : (date.getMonthValue() + "/" + date.getDayOfMonth());
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("name", label);
+            entry.put("score", scoreByDate.containsKey(dateStr) ? scoreByDate.get(dateStr) : null);
+            result.add(entry);
+        }
 
-        return ResponseEntity.ok(dailyData);
+        return ResponseEntity.ok(result);
     }
 }

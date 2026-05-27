@@ -40,6 +40,9 @@ public class ChatMessage {
     @Column(name = "router_level")
     private String routerLevel;
 
+    @Column(name = "message_order", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
+    private Integer messageOrder = 0;
+
     @Column(name = "is_private", nullable = false, columnDefinition = "boolean default false")
     private boolean isPrivate = false;
 

@@ -1,8 +1,10 @@
 package com.dativus.server.service;
 
+import com.dativus.server.entity.ChatSession;
 import com.dativus.server.entity.User;
 import com.dativus.server.entity.Workspace;
 import com.dativus.server.entity.WorkspaceMember;
+import com.dativus.server.repository.ChatSessionRepository;
 import com.dativus.server.repository.UserRepository;
 import com.dativus.server.repository.WorkspaceRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,15 +19,23 @@ public class WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
     private final UserRepository userRepository;
+    private final ChatSessionRepository chatSessionRepository;
 
     // 1. 팀 생성 및 랜덤 초대코드 발급
     @Transactional
     public Workspace createWorkspace(String name) {
-        // 무작위 UUID를 생성한 뒤 앞 6자리만 잘라서 대문자로 변환 (예: 8F3A1C)
         String inviteCode = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-
         Workspace workspace = new Workspace(name, inviteCode);
-        return workspaceRepository.save(workspace);
+        Workspace saved = workspaceRepository.save(workspace);
+
+        // 워크스페이스 생성 시 # 일반 채널 자동 생성
+        ChatSession defaultChannel = new ChatSession();
+        defaultChannel.setWorkspace(saved);
+        defaultChannel.setTitle("일반");
+        defaultChannel.setSessionType("TEAM_CHANNEL");
+        chatSessionRepository.save(defaultChannel);
+
+        return saved;
     }
 
     // 2. 초대코드를 이용한 팀 합류

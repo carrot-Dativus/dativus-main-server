@@ -42,7 +42,8 @@ public class UserService {
             user.updatePersona(
                     request.getPersona().getDecisionStyle(),
                     request.getPersona().getExpertise(),
-                    request.getPersona().getTone()
+                    request.getPersona().getTone(),
+                    request.getPersona().getPersonaMemo()
             );
         }
 
@@ -68,12 +69,12 @@ public class UserService {
     }
 
     @Transactional
-    public void updateUserPersona(String userIdStr, String decisionStyle, String expertise, String tone) {
+    public void updateUserPersona(String userIdStr, String decisionStyle, String expertise, String tone, String personaMemo) {
         UUID userId = UUID.fromString(userIdStr);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
-        user.updatePersona(decisionStyle, expertise, tone);
+        user.updatePersona(decisionStyle, expertise, tone, personaMemo);
     }
 
     @Transactional(readOnly = true)
@@ -82,12 +83,13 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
 
-        return java.util.Map.of(
-                "email", user.getEmail(),
-                "username", user.getUsername(),
-                "decisionStyle", user.getPersonaDecisionStyle() != null ? user.getPersonaDecisionStyle() : "일반적인",
-                "expertise", user.getPersonaExpertise() != null ? user.getPersonaExpertise() : "기본",
-                "tone", user.getPersonaTone() != null ? user.getPersonaTone() : "친절한"
-        );
+        java.util.Map<String, String> profile = new java.util.HashMap<>();
+        profile.put("email", user.getEmail());
+        profile.put("username", user.getUsername());
+        profile.put("decisionStyle", user.getPersonaDecisionStyle() != null ? user.getPersonaDecisionStyle() : "일반적인");
+        profile.put("expertise", user.getPersonaExpertise() != null ? user.getPersonaExpertise() : "기본");
+        profile.put("tone", user.getPersonaTone() != null ? user.getPersonaTone() : "친절한");
+        profile.put("personaMemo", user.getPersonaMemo() != null ? user.getPersonaMemo() : "");
+        return profile;
     }
 }

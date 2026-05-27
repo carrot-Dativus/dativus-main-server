@@ -48,7 +48,7 @@ public class AuthService {
         String accessToken = jwtUtil.generateToken(user.getId().toString(), workspaceId);
         String refreshToken = createRefreshToken(user.getId());
 
-        return new LoginResponse(accessToken, refreshToken, "Bearer", user.getId().toString(), workspaceId);
+        return new LoginResponse(accessToken, refreshToken, "Bearer", user.getId().toString(), workspaceId, user.getUsername());
     }
 
     @Transactional
@@ -77,7 +77,7 @@ public class AuthService {
         String newRefreshToken = createRefreshToken(user.getId());
         String newAccessToken = jwtUtil.generateToken(user.getId().toString(), workspaceId);
 
-        return new LoginResponse(newAccessToken, newRefreshToken, "Bearer", user.getId().toString(), workspaceId);
+        return new LoginResponse(newAccessToken, newRefreshToken, "Bearer", user.getId().toString(), workspaceId, user.getUsername());
     }
 
     @Transactional

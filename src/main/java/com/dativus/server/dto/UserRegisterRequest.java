@@ -22,5 +22,6 @@ public class UserRegisterRequest {
         private String decisionStyle; // "논리적", "직관적" 등
         private String expertise;     // "백엔드", "프론트엔드" 등
         private String tone;          // "친절한", "전문적인" 등
+        private String personaMemo;   // 자유 입력형 개인화 지시문 (Phase 1)
     }
 }

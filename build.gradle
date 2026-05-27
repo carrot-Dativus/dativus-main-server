@@ -28,6 +28,9 @@ dependencies {
 	// 핵심 웹 서버
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
+	// WebSocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
 	// Spring Security
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 

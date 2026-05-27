@@ -31,7 +31,8 @@ public class UserController {
                     userId,
                     request.get("decisionStyle"),
                     request.get("expertise"),
-                    request.get("tone")
+                    request.get("tone"),
+                    request.get("personaMemo")
             );
             // 성공하면 프론트엔드에 확인 메시지 전송
             return ResponseEntity.ok().body(java.util.Map.of("message", "AI 뇌파(페르소나) 동기화 완료!"));
