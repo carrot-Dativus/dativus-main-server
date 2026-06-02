@@ -49,6 +49,9 @@ public class ChatSession {
     @Column(name = "user_id")
     private UUID userId;
 
+    @Column(name = "canvas_data", columnDefinition = "TEXT")
+    private String canvasData;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

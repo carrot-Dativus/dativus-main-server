@@ -70,7 +70,24 @@ public class ChatController {
         ));
     }
 
-    // 5. 방 번호로 과거 대화 내역 불러오기 (비밀/공용 분리)
+    // 5. 팀 채널 캔버스 저장 (AI 응답 수신 시 호출, 전 팀원 WS 브로드캐스트)
+    @PutMapping("/session/{sessionId}/canvas")
+    public ResponseEntity<?> saveCanvas(
+            @PathVariable String sessionId,
+            @RequestBody Map<String, Object> body) {
+        chatService.saveCanvas(sessionId, body);
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    // 6. 팀 채널 캔버스 조회 (채널 전환 시 최신 캔버스 복원)
+    @GetMapping("/session/{sessionId}/canvas")
+    public ResponseEntity<?> getCanvas(@PathVariable String sessionId) {
+        Object data = chatService.getCanvas(sessionId);
+        if (data == null) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(data);
+    }
+
+    // 7. 방 번호로 과거 대화 내역 불러오기 (비밀/공용 분리)
     @GetMapping("/session/{sessionId}/messages")
     public ResponseEntity<?> getChatHistory(
             @PathVariable String sessionId,

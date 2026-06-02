@@ -206,7 +206,41 @@ public class ChatService {
         }
     }
 
-    // 3. 과거 대화 내역 불러오기 (비밀/공용 필터링)
+    // 3-a. 팀 채널 캔버스 저장 + WebSocket 브로드캐스트
+    @Transactional
+    public void saveCanvas(String sessionIdStr, Map<String, Object> canvasData) {
+        ChatSession session = chatSessionRepository.findById(UUID.fromString(sessionIdStr))
+                .orElseThrow(() -> new RuntimeException("세션 없음"));
+        try {
+            String json = objectMapper.writeValueAsString(canvasData);
+            session.setCanvasData(json);
+            chatSessionRepository.save(session);
+            if (session.getWorkspace() != null) {
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("type", "canvas_update");
+                payload.put("sessionId", sessionIdStr);
+                payload.put("data", canvasData);
+                chatWebSocketHandler.broadcast(
+                        session.getWorkspace().getId().toString(),
+                        objectMapper.writeValueAsString(payload)
+                );
+            }
+        } catch (Exception ignored) {}
+    }
+
+    // 3-b. 팀 채널 캔버스 조회
+    public Object getCanvas(String sessionIdStr) {
+        return chatSessionRepository.findById(UUID.fromString(sessionIdStr))
+                .map(s -> {
+                    String json = s.getCanvasData();
+                    if (json == null || json.isBlank()) return null;
+                    try { return objectMapper.readValue(json, Object.class); }
+                    catch (Exception e) { return null; }
+                })
+                .orElse(null);
+    }
+
+    // 4. 과거 대화 내역 불러오기 (비밀/공용 필터링)
     public List<Map<String, String>> getChatHistory(String sessionIdStr, boolean isPrivate) {
         UUID sessionId = UUID.fromString(sessionIdStr);
 
